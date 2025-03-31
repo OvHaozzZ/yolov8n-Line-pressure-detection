@@ -1,0 +1,17 @@
+# YOLOv8模型文件（太大，不适合放入git）
+function/yolov8n.pt
+
+# 文档文件
+基于*YOLOv8*的智能压线检测系统*.md
+
+# 生成的图像文件
+detection_*.jpg
+debug_perspective.jpg
+transformed_view.jpg
+result_*.jpg
+
+# 其他文件
+*.log
+*.txt
+*.json
+*.csv
