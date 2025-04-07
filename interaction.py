@@ -37,8 +37,10 @@ except Exception as e:
     logging.warning(f"无法设置DPI感知: {e}")
     DEFAULT_FONT = ("Helvetica", BUTTON_FONT_SIZE, "bold")
 
+
 class ResourceManager:
     """资源管理器类"""
+
     @staticmethod
     def load_image(path: str, size: tuple) -> Optional[ImageTk.PhotoImage]:
         try:
@@ -49,18 +51,19 @@ class ResourceManager:
             logging.error(f"加载图片失败: {e}")
             return None
 
+
 class LuxuryApp:
     def __init__(self, root):
         self.root = root
         self.root.title("行稳致远")
         self.root.geometry(f"{WINDOW_WIDTH}x{WINDOW_HEIGHT}")
-        
+
         # 设置窗口最小尺寸
         self.root.minsize(WINDOW_WIDTH, WINDOW_HEIGHT)
-        
+
         # 初始化UI组件
         self._init_ui()
-        
+
         # 绑定窗口关闭事件
         self.root.protocol("WM_DELETE_WINDOW", self._on_closing)
 
@@ -71,7 +74,7 @@ class LuxuryApp:
             bg_path = SCRIPT_DIR / "background.jpg"
             if not bg_path.exists():
                 raise FileNotFoundError(f"背景图片不存在: {bg_path}")
-            
+
             self.bg_photo = ResourceManager.load_image(str(bg_path), (WINDOW_WIDTH, WINDOW_HEIGHT))
             if not self.bg_photo:
                 raise RuntimeError("背景图片加载失败")
@@ -104,7 +107,7 @@ class LuxuryApp:
         try:
             # 主标题
             self.canvas.create_text(
-                WINDOW_WIDTH/2, 100,
+                WINDOW_WIDTH / 2, 100,
                 text="行稳致远",
                 font=("Microsoft YaHei", TITLE_FONT_SIZE, "bold"),
                 fill="#ffffff",
@@ -113,8 +116,8 @@ class LuxuryApp:
 
             # 副标题
             self.canvas.create_text(
-                WINDOW_WIDTH/2, 150,
-                text="基于国产大算力芯片的危险驾驶行为检测系统",
+                WINDOW_WIDTH / 2, 150,
+                text="基于国产大算力芯片的压线检测系统",
                 font=("Microsoft YaHei", SUBTITLE_FONT_SIZE),
                 fill="#cccccc",
                 anchor=tk.CENTER
@@ -122,8 +125,8 @@ class LuxuryApp:
 
             # 装饰线
             self.canvas.create_line(
-                WINDOW_WIDTH/2 - 150, 130,
-                WINDOW_WIDTH/2 + 150, 130,
+                WINDOW_WIDTH / 2 - 150, 130,
+                WINDOW_WIDTH / 2 + 150, 130,
                 fill="#3498db",
                 width=3,
                 capstyle=tk.ROUND
@@ -135,7 +138,7 @@ class LuxuryApp:
         """配置样式"""
         try:
             self.style = ttk.Style()
-            
+
             # 配置框架样式
             self.style.configure(
                 "Luxury.TFrame",
@@ -231,6 +234,7 @@ class LuxuryApp:
             logging.error(f"实时监控失败: {e}")
             messagebox.showerror("错误", f"实时监控失败: {str(e)}")
 
+
 def main():
     """主函数"""
     try:
@@ -249,6 +253,7 @@ def main():
     except Exception as e:
         logging.critical(f"程序运行失败: {e}")
         messagebox.showerror("严重错误", f"程序运行失败: {str(e)}")
+
 
 if __name__ == "__main__":
     main()
