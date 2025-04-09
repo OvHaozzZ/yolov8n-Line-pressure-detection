@@ -239,6 +239,3 @@ if __name__ == "__main__":
         print(p_list)
     except Exception as e:
         print(f"Error in main: {e}")
-
-
-

@@ -15,13 +15,80 @@ def auto_detect_homography_points(image):
     """
     h, w = image.shape[:2]
 
-    # 根据图像尺寸自动计算透视变换的四个点
-    # 假设车道在图像下半部分的梯形区域内
+    # 转换为灰度图
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # 应用高斯模糊
+    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+
+    # 使用Canny边缘检测
+    edges = cv2.Canny(blurred, 50, 150)
+
+    # 使用HoughLinesP检测直线
+    lines = cv2.HoughLinesP(edges, 1, np.pi/180, threshold=50, minLineLength=100, maxLineGap=50)
+
+    if lines is None:
+        # 如果没有检测到直线，使用默认值
+        return np.array([
+            [int(w * 0.25), int(h * 0.65)],  # 左上
+            [int(w * 0.75), int(h * 0.65)],  # 右上
+            [int(w * 0.90), int(h * 0.95)],  # 右下
+            [int(w * 0.10), int(h * 0.95)]   # 左下
+        ], dtype='float32')
+
+    # 分离左右车道线
+    left_lines = []
+    right_lines = []
+
+    for line in lines:
+        x1, y1, x2, y2 = line[0]
+        # 计算斜率
+        if x2 != x1:  # 避免除零错误
+            slope = (y2 - y1) / (x2 - x1)
+            # 根据斜率判断是左车道线还是右车道线
+            if slope < -0.2:  # 左车道线
+                left_lines.append(line[0])
+            elif slope > 0.2:  # 右车道线
+                right_lines.append(line[0])
+
+    # 如果没有检测到足够的车道线，使用默认值
+    if len(left_lines) < 2 or len(right_lines) < 2:
+        return np.array([
+            [int(w * 0.25), int(h * 0.65)],  # 左上
+            [int(w * 0.75), int(h * 0.65)],  # 右上
+            [int(w * 0.90), int(h * 0.95)],  # 右下
+            [int(w * 0.10), int(h * 0.95)]   # 左下
+        ], dtype='float32')
+
+    # 对左右车道线进行拟合
+    left_points = np.array(left_lines).reshape(-1, 2)
+    right_points = np.array(right_lines).reshape(-1, 2)
+
+    # 使用最小二乘法拟合直线
+    left_fit = np.polyfit(left_points[:, 0], left_points[:, 1], 1)
+    right_fit = np.polyfit(right_points[:, 0], right_points[:, 1], 1)
+
+    # 计算透视变换的四个点
+    y_top = int(h * 0.65)  # 透视变换的上边界
+    y_bottom = h  # 透视变换的下边界
+
+    # 计算左右车道线在上下边界的x坐标
+    x_left_top = int((y_top - left_fit[1]) / left_fit[0])
+    x_left_bottom = int((y_bottom - left_fit[1]) / left_fit[0])
+    x_right_top = int((y_top - right_fit[1]) / right_fit[0])
+    x_right_bottom = int((y_bottom - right_fit[1]) / right_fit[0])
+
+    # 确保坐标在图像范围内
+    x_left_top = max(0, min(w, x_left_top))
+    x_left_bottom = max(0, min(w, x_left_bottom))
+    x_right_top = max(0, min(w, x_right_top))
+    x_right_bottom = max(0, min(w, x_right_bottom))
+
     src_pts = np.array([
-        [int(w * 0.25), int(h * 0.65)],  # 左上
-        [int(w * 0.75), int(h * 0.65)],  # 右上
-        [int(w * 0.90), int(h * 0.95)],  # 右下
-        [int(w * 0.10), int(h * 0.95)]  # 左下
+        [x_left_top, y_top],      # 左上
+        [x_right_top, y_top],     # 右上
+        [x_right_bottom, y_bottom], # 右下
+        [x_left_bottom, y_bottom]  # 左下
     ], dtype='float32')
 
     return src_pts
@@ -197,6 +264,3 @@ if __name__ == "__main__":
             print(f"  车辆 {i + 1}: {pos}")
     else:
         print("未检测到任何汽车。")
-
-
-
