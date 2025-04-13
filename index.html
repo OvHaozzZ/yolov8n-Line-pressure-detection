@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>行稳致远 - 压线检测系统</title>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --primary-hover: #2980b9;
+            --text-color: #2c3e50;
+            --light-text: #ecf0f1;
+            --bg-overlay: rgba(0, 0, 0, 0.6);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: var(--text-color);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .bg-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.6)), url('https://images.pexels.com/photos/63324/white-traffic-car-vehicle-63324.jpeg?auto=compress&cs=tinysrgb&w=1600');
+            background-size: cover;
+            background-position: center;
+            filter: brightness(0.8);
+            z-index: -1;
+            transition: all 0.5s ease;
+        }
+        
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-overlay);
+            z-index: -1;
+        }
+        
+        /* 动态图形元素 */
+        .animated-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+        
+        .road-line {
+            position: absolute;
+            height: 6px;
+            background-color: rgba(255, 255, 255, 0.6);
+            left: 0;
+            width: 100px;
+            animation: roadLineAnimation 3s linear infinite;
+        }
+        
+        @keyframes roadLineAnimation {
+            0% { transform: translateX(-100px); }
+            100% { transform: translateX(100vw); }
+        }
+        
+        .header {
+            padding: 2rem 0;
+            text-align: center;
+            animation: fadeInDown 1s ease;
+        }
+        
+        .title {
+            font-size: 3rem;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
+        }
+        
+        .title:hover {
+            transform: scale(1.05);
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.7);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #cccccc;
+            margin-bottom: 1rem;
+            animation: fadeIn 1.5s ease;
+        }
+        
+        .title-underline {
+            width: 300px;
+            height: 3px;
+            background-color: var(--primary-color);
+            margin: 0 auto;
+            border-radius: 3px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .title-underline::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.7), transparent);
+            animation: shimmer 2s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        .content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            min-height: 60vh;
+            animation: fadeIn 1s ease 0.5s both;
+        }
+        
+        .button-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .btn {
+            padding: 1.2rem 2rem;
+            min-width: 220px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-align: center;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: all 0.6s ease;
+        }
+        
+        .btn:hover::before {
+            left: 100%;
+        }
+        
+        .btn:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn:active {
+            transform: translateY(-1px);
+        }
+        
+        .btn i {
+            margin-right: 0.5rem;
+            font-size: 1.3rem;
+        }
+        
+        .btn:nth-child(1) { animation: fadeInUp 0.6s ease 0.6s both; }
+        .btn:nth-child(2) { animation: fadeInUp 0.6s ease 0.8s both; }
+        .btn:nth-child(3) { animation: fadeInUp 0.6s ease 1s both; }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+        }
+        
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transform: scale(0.9);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        
+        .modal.active .modal-content {
+            transform: scale(1);
+            opacity: 1;
+        }
+        
+        .modal-title {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--text-color);
+        }
+        
+        .modal-body {
+            margin-bottom: 1.5rem;
+        }
+        
+        .modal-footer {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+        
+        .modal-btn {
+            padding: 0.7rem 1.5rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .modal-btn:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 1rem;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: #cccccc;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            animation: fadeIn 1s ease 1.5s both;
+        }
+        
+        /* 添加动画 */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes fadeInDown {
+            from { 
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeInUp {
+            from { 
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        @media (max-width: 768px) {
+            .button-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .title {
+                font-size: 2.2rem;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+                padding: 0 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="bg-image"></div>
+        <div class="overlay"></div>
+        
+        <!-- 动态背景元素 -->
+        <div class="animated-bg" id="animatedBg"></div>
+        
+        <header class="header">
+            <h1 class="title">行稳致远</h1>
+            <p class="subtitle">基于国产大算力芯片的压线检测系统</p>
+            <div class="title-underline"></div>
+        </header>
+        
+        <main class="content">
+            <div class="button-container">
+                <button class="btn" onclick="openFileDialog('image')">
+                    <span>📷 图片智能检测</span>
+                </button>
+                <button class="btn" onclick="openFileDialog('video')">
+                    <span>🎥 视频行为分析</span>
+                </button>
+                <button class="btn" onclick="showDeviceWarning()">
+                    <span>🚨 实时安全监测</span>
+                </button>
+            </div>
+            <input type="file" id="imageInput" class="file-input" accept="image/jpeg,image/png,image/jpg">
+            <input type="file" id="videoInput" class="file-input" accept="video/mp4,video/avi">
+        </main>
+        
+        <footer class="footer">
+            <p>© 2025 行稳致远系统 版权所有</p>
+        </footer>
+        
+        <!-- 模态框 -->
+        <div id="warningModal" class="modal">
+            <div class="modal-content">
+                <h2 class="modal-title">设备状态</h2>
+                <div class="modal-body">
+                    <p>⛔ 未检测到安全监测设备</p>
+                    <p>请连接专用硬件后重试</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-btn" onclick="closeModal()">确定</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="resultModal" class="modal">
+            <div class="modal-content">
+                <h2 class="modal-title">处理结果</h2>
+                <div class="modal-body">
+                    <p id="resultMessage">文件已上传，开始处理...</p>
+                    <div id="processing" style="display: none; margin: 20px 0;">
+                        <div style="border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 2s linear infinite; margin: 0 auto;"></div>
+                    </div>
+                    <div id="resultImage" style="margin: 10px 0; max-width: 100%; display: none;">
+                        <img id="processedImage" src="" alt="处理结果" style="max-width: 100%;">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-btn" onclick="closeResultModal()">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 创建动态车道线效果
+        function createRoadLines() {
+            const animatedBg = document.getElementById('animatedBg');
+            const screenHeight = window.innerHeight;
+            
+            // 在屏幕高度范围内创建多条车道线
+            for (let i = 0; i < 5; i++) {
+                const line = document.createElement('div');
+                line.className = 'road-line';
+                
+                // 设置不同的速度和位置
+                const speed = 3 + Math.random() * 2; // 3-5秒
+                const position = screenHeight * 0.5 + (i * 50); // 在屏幕中下部
+                const width = 50 + Math.random() * 100; // 宽度50-150px
+                
+                line.style.top = position + 'px';
+                line.style.width = width + 'px';
+                line.style.animationDuration = speed + 's';
+                
+                // 随机延迟启动
+                line.style.animationDelay = (Math.random() * 3) + 's';
+                
+                animatedBg.appendChild(line);
+            }
+        }
+        
+        // 在页面加载后创建动态效果
+        window.addEventListener('DOMContentLoaded', function() {
+            createRoadLines();
+            
+            // 滑动动画
+            const title = document.querySelector('.title');
+            setInterval(() => {
+                title.style.textShadow = '2px 2px 8px rgba(52, 152, 219, 0.7)';
+                setTimeout(() => {
+                    title.style.textShadow = '2px 2px 4px rgba(0, 0, 0, 0.5)';
+                }, 1000);
+            }, 3000);
+        });
+        
+        // 打开文件选择对话框
+        function openFileDialog(type) {
+            if (type === 'image') {
+                document.getElementById('imageInput').click();
+            } else if (type === 'video') {
+                document.getElementById('videoInput').click();
+            }
+        }
+        
+        // 显示设备警告
+        function showDeviceWarning() {
+            const modal = document.getElementById('warningModal');
+            modal.style.display = 'flex';
+            setTimeout(() => {
+                modal.classList.add('active');
+            }, 10);
+        }
+        
+        // 关闭模态框
+        function closeModal() {
+            const modal = document.getElementById('warningModal');
+            modal.classList.remove('active');
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 300);
+        }
+        
+        // 关闭结果模态框
+        function closeResultModal() {
+            const modal = document.getElementById('resultModal');
+            modal.classList.remove('active');
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 300);
+        }
+        
+        // 处理上传事件
+        document.getElementById('imageInput').addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                processFile(e.target.files[0], 'image');
+            }
+        });
+        
+        document.getElementById('videoInput').addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                processFile(e.target.files[0], 'video');
+            }
+        });
+        
+        // 模拟处理文件
+        function processFile(file, type) {
+            // 显示处理中模态框
+            const modal = document.getElementById('resultModal');
+            document.getElementById('resultMessage').textContent = `正在处理${type === 'image' ? '图片' : '视频'}...`;
+            document.getElementById('processing').style.display = 'block';
+            document.getElementById('resultImage').style.display = 'none';
+            modal.style.display = 'flex';
+            
+            setTimeout(() => {
+                modal.classList.add('active');
+            }, 10);
+            
+            // 模拟处理延迟
+            setTimeout(function() {
+                // 更新处理结果
+                document.getElementById('processing').style.display = 'none';
+                
+                if (type === 'image') {
+                    // 如果是图片，显示处理结果
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        document.getElementById('processedImage').src = event.target.result;
+                        document.getElementById('resultImage').style.display = 'block';
+                        document.getElementById('resultMessage').textContent = '检测完成！图片中的车辆压线情况已标记。';
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    // 如果是视频，显示处理完成信息
+                    document.getElementById('resultMessage').textContent = '视频处理完成！已保存至output_video.mp4';
+                }
+            }, 2000);
+        }
+        
+        // 点击模态框背景关闭模态框
+        window.onclick = function(event) {
+            if (event.target === document.getElementById('warningModal')) {
+                closeModal();
+            }
+            if (event.target === document.getElementById('resultModal')) {
+                closeResultModal();
+            }
+        }
+        
+        // 添加键盘ESC关闭模态框
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeModal();
+                closeResultModal();
+            }
+        });
+        
+        // 每隔一段时间切换背景图片效果
+        const bgImages = [
+            'https://images.pexels.com/photos/63324/white-traffic-car-vehicle-63324.jpeg?auto=compress&cs=tinysrgb&w=1600',
+            'https://images.pexels.com/photos/1756957/pexels-photo-1756957.jpeg?auto=compress&cs=tinysrgb&w=1600',
+            'https://images.pexels.com/photos/3605302/pexels-photo-3605302.jpeg?auto=compress&cs=tinysrgb&w=1600',
+            'https://images.pexels.com/photos/1034662/pexels-photo-1034662.jpeg?auto=compress&cs=tinysrgb&w=1600'
+        ];
+        
+        let currentBgIndex = 0;
+        
+        function changeBgImage() {
+            currentBgIndex = (currentBgIndex + 1) % bgImages.length;
+            const bgImage = document.querySelector('.bg-image');
+            bgImage.style.opacity = '0.3';
+            
+            setTimeout(() => {
+                bgImage.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.6)), url('${bgImages[currentBgIndex]}')`;
+                bgImage.style.opacity = '1';
+            }, 500);
+        }
+        
+        // 每15秒切换一次背景
+        setInterval(changeBgImage, 15000);
+    </script>
+</body>
+</html> 
