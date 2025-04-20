@@ -1,6 +1,11 @@
 # YOLOv8模型文件（太大，不适合放入git）
 function/yolov8n.pt
 
+# Python缓存文件
+__pycache__/
+*.py[cod]
+*$py.class
+
 # 文档文件
 基于*YOLOv8*的智能压线检测系统*.md
 
@@ -14,4 +19,4 @@ result_*.jpg
 *.log
 *.txt
 *.json
-*.csv
+*.csv 
